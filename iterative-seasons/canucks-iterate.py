@@ -311,27 +311,20 @@ def process_season(team_id, start_year):
 
 # Function to process travel data for the seaso ns
 def process_travel(game_data):
-    # Home team information
     home_team = "Vancouver Canucks"
-
-    # Initialize previous game date for rest days calculation
     previous_game_date = None
 
     for game in game_data:
-        # Extract game date
         game_date = datetime.strptime(game["Game Date"], "%Y-%m-%d")
 
-        # Calculate distance traveled and time zone change for away games
         if game["Game Location"] == "Away":
             opponent_team = game["Opponent Team"]
             game["Distance Traveled (miles)"] = calculate_distance(home_team, opponent_team)
             game["Time Zone Change"] = calculate_time_zone_change(home_team, opponent_team)
         else:
-            # Home games have no distance traveled or time zone change
             game["Distance Traveled (miles)"] = 0
             game["Time Zone Change"] = 0
 
-        # Calculate rest days
         game["Rest Days"] = calculate_rest_days(previous_game_date, game_date)
         previous_game_date = game_date
 
