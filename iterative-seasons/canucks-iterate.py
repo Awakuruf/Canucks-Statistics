@@ -309,7 +309,7 @@ def process_season(team_id, start_year):
 
     save_to_csv(game_data, season)
 
-# Function to process travel data for the seaso ns
+# Function to process travel data for the seasons
 def process_travel(game_data):
     home_team = "Vancouver Canucks"
     previous_game_date = None
