@@ -1,0 +1,3 @@
+# Ignoring the generated CSV and JSON files
+*.csv
+*.json
