@@ -250,6 +250,12 @@ def calculate_rest_days(previous_game_date, current_game_date):
         return (current_game_date - previous_game_date).days
     return 0 
 
+def sort_by_date(game_data):
+    """
+    Sort the game data by the 'Game Date' field in ascending order.
+    """
+    return sorted(game_data, key=lambda x: datetime.strptime(x["Game Date"], "%Y-%m-%d"))
+
 # Function to save game data to CSV
 def save_to_csv(game_data, season):
     if not game_data:
@@ -274,7 +280,6 @@ def process_season(team_id, start_year):
     end_date = f"{start_year + 1}-04-15"
 
     games = get_game_history(team_id, start_date, end_date)
-    print("Game Data: ", games)
     game_data = []
 
     for game in games:
@@ -294,6 +299,7 @@ def process_season(team_id, start_year):
         game_data.append(game_entry)
 
     convert_id_to_team_name(game_data)
+    game_data = sort_by_date(game_data)
     process_travel(game_data)
 
     with open(f"canucks_game_history_{season}.json", "w") as f:
