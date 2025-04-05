@@ -220,19 +220,16 @@ nhl_team_mapping = {
 
 # Function to calculate distance traveled
 def calculate_distance(home_team, opponent_team):
-    # Get coordinates for home and opponent cities
     home_city_info = nhl_team_mapping.get(home_team, {})
     opponent_city_info = nhl_team_mapping.get(opponent_team, {})
 
     home_coords = home_city_info.get("coordinates", (0, 0))
     opponent_coords = opponent_city_info.get("coordinates", (0, 0))
 
-    # Calculate distance using geodesic
     return geodesic(home_coords, opponent_coords).miles
 
 # Function to calculate time zone change
 def calculate_time_zone_change(home_team, opponent_team):
-    # Get time zones for home and opponent cities
     home_city_info = nhl_team_mapping.get(home_team, {})
     opponent_city_info = nhl_team_mapping.get(opponent_team, {})
 
@@ -242,7 +239,7 @@ def calculate_time_zone_change(home_team, opponent_team):
     # Calculate time zone difference
     home_tz = pytz.timezone(home_tz_name)
     opponent_tz = pytz.timezone(opponent_tz_name)
-    return (opponent_tz.utcoffset(datetime.now()) - home_tz.utcoffset(datetime.now())).total_seconds() / 3600  # Convert to hours
+    return (opponent_tz.utcoffset(datetime.now()) - home_tz.utcoffset(datetime.now())).total_seconds() / 3600
 
 # Function to calculate rest days
 def calculate_rest_days(previous_game_date, current_game_date):
@@ -265,7 +262,7 @@ def save_to_csv(game_data, season):
     filename = f"canucks_game_history_{season}.csv"
     fieldnames = [
         "Season", "Game Location", "Opponent Team", "Distance Traveled (miles)",
-        "Time Zone Change", "Rest Days", "Goals Scored", "Goals Conceded", "Result", "Game Date"
+        "Time Zone Change", "Rest Days", "Goals Scored", "Goals Conceded", "Result", "Game Date", "City"
     ]
 
     with open(filename, "w", newline="") as csvfile:
@@ -283,30 +280,33 @@ def process_season(team_id, start_year):
     game_data = []
 
     for game in games:
+        opponent_team_id = game["visitingTeamId"] if game["homeTeamId"] == team_id else game["homeTeamId"]
+        game_location = "Home" if game["homeTeamId"] == team_id else "Away"
+        game_date = game['gameDate']
+
         goals_scored = game["homeScore"] if game["homeTeamId"] == team_id else game["visitingScore"]
         goals_conceded = game["visitingScore"] if game["homeTeamId"] == team_id else game["homeScore"]
-        game_date = game['gameDate']
+        result = "Win" if goals_scored > goals_conceded else "Loss"
+
+        opponent_team = convert_id_to_team_name([{"Opponent Team": opponent_team_id}])[0]["Opponent Team"]
+        opponent_city = nhl_team_mapping.get(opponent_team, {}).get("city", "Unknown")
 
         game_entry = {
             "Season": season,
-            "Game Location": "Home" if game["homeTeamId"] == team_id else "Away",
-            "Opponent Team": game["visitingTeamId"] if game["homeTeamId"] == team_id else game["homeTeamId"],
+            "Game Location": game_location,
+            "Opponent Team": opponent_team,
+            "City": opponent_city,
+            "Distance Traveled (miles)": calculate_distance(TEAM_NAME, opponent_team),
+            "Time Zone Change": calculate_time_zone_change(TEAM_NAME, opponent_team),
             "Goals Scored": goals_scored,
             "Goals Conceded": goals_conceded,
-            "Result": "Win" if goals_scored > goals_conceded else "Loss",
+            "Result": result,
             "Game Date": game_date
         }
+
         game_data.append(game_entry)
 
-    convert_id_to_team_name(game_data)
     game_data = sort_by_date(game_data)
-    process_travel(game_data)
-
-    with open(f"canucks_game_history_{season}.json", "w") as f:
-        json.dump(game_data, f, indent=4)
-
-    print(f"Game history saved to canucks_game_history_{season}.json")
-
     save_to_csv(game_data, season)
 
 # Function to process travel data for the seasons
